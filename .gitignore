@@ -1,0 +1,5 @@
+server
+server_dev
+source.bin
+resolve.bin
+*.tdbg
