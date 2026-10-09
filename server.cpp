@@ -7,7 +7,6 @@
 //   3. Pass 0X2   -- execute resolve.bin: tokenize ONE line at a time, update the call stack, take a snapshot -> Timeline
 //   4. Pass 0X3   -- serialize Timeline -> session.tdbg(header + snapshot records + dense index)
 
-
 #include <iostream>
 #include <string>
 #include <cstdint>
@@ -16,6 +15,7 @@
 #include <sys/socket.h>
 #include <cstdint>
 #include <cstdio>
+#include<stdexcept>
 using namespace std;
 
 // ---- Constants ----
@@ -38,6 +38,8 @@ class Stack
     {
         T data;
         Node *next;
+
+        Node(T val): data(val), next(nullptr){}
     };
     Node *top;
     int32_t count;
@@ -46,30 +48,71 @@ public:
     // Implement these functions:
     Stack()
     { // initialize the stack
+        top=nullptr;
+        count=0;
     }
     void push(const T &val)
     {
+       if(count >= MAX_STACK_DEPTH)
+          throw out_of_range("Stack is full!!!");
 
+        Node* n=new Node(val);
+        n->next=top;
+        top=n;
+        count++;
         // pushes the value on the stack if max limit is not reached yet.
     }
     T pop()
     {
         // pop the top value on the stack
+        if(top==nullptr || count==0)
+            throw out_of_range("Stack is empty!!!");
+
+        Node temp=*top;
+        delete top;
+        top=temp.next;
+        count--;
+
+        return temp.data;
     }
     T &peek()
     {
+        if(top==nullptr)
+            throw out_of_range("Stack is empty!!!");
+
+        return top->data;
         // returns the top value on the stack
     }
     bool isEmpty()
     {
+        return count==0;
     }
     int32_t depth()
     {
+        return count;
     }
     int32_t snapshot_into(T out[], int32_t maxLen)
     {
+         if(top==nullptr)
+            throw out_of_range("Stack is empty!!!");
+
+        Node* temp=top;
+        int i=0;
+        out[i]=temp->data;
+
+        while(i<maxLen && temp->next!=nullptr){
+            temp=temp->next;
+            i++;
+            out[i]=temp->data;
+        }
+        return i+1;
         // copies every frame, top to bottom in the array given as a parameter
         // this is what buildSnapshot() call, returns count written
+    }
+
+    ~Stack(){
+        while(top!=nullptr)
+          pop();
     }
 };
 
